@@ -622,6 +622,9 @@ def eval_model(global_step, writer, device, model, y, c, g, input_lengths, eval_
     path = join(eval_dir, "step{:09d}_waveplots.png".format(global_step))
     save_waveplot(path, y_hat, y_target)
 
+    #add audio and figures to tensorboard
+    writer.add_audio('target_audio', y_target, global_step, hparams.sample_rate)
+    writer.add_audio('generated_audio', y_hat, global_step, hparams.sample_rate)
 
 def save_states(global_step, writer, y_hat, y, input_lengths, checkpoint_dir=None):
     print("Save intermediate states at step {}".format(global_step))
