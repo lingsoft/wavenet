@@ -18,7 +18,7 @@ def build_from_path(in_dir, out_dir, num_workers=1, tqdm=lambda x: x):
     executor = ProcessPoolExecutor(max_workers=num_workers)
     futures = []
     index = 1
-    src_files = sorted(glob(join(in_dir, "*.wav")))
+    src_files = sorted(glob(join(in_dir, "**/*.wav"), recursive=True))
     for wav_path in src_files:
         futures.append(executor.submit(
             partial(_process_utterance, out_dir, index, wav_path, "dummy")))
