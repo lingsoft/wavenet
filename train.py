@@ -982,7 +982,7 @@ def get_data_loaders(dump_root, speaker_id, test_shuffle=True):
     else:
         max_steps = None
 
-    for phase in ["train_no_dev", "dev"]:
+    for phase in ["train_no_dev"]:#, "dev"]:
         train = phase == "train_no_dev"
         X = FileSourceDataset(
             RawAudioDataSource(join(dump_root, phase), speaker_id=speaker_id,
