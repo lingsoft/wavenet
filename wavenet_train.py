@@ -59,7 +59,7 @@ from wavenet_vocoder.mixture import mix_gaussian_loss
 from wavenet_vocoder.mixture import sample_from_mix_gaussian
 
 import audio
-from hparams import hparams, hparams_debug_string
+from wavenet_hparams import hparams, hparams_debug_string
 
 global_step = 0
 global_test_step = 0

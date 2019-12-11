@@ -29,9 +29,9 @@ import librosa
 from wavenet_vocoder.util import is_mulaw_quantize, is_mulaw, is_raw
 
 import audio
-from hparams import hparams
+from wavenet_hparams import hparams
 
-from train import to_categorical
+from wavenet_train import to_categorical
 
 
 torch.set_num_threads(4)
@@ -40,7 +40,7 @@ device = torch.device("cuda" if use_cuda else "cpu")
 
 
 def batch_wavegen(model, c=None, g=None, fast=True, tqdm=tqdm):
-    from train import sanity_check
+    from wavenet_train import sanity_check
     sanity_check(model, c, g)
     assert c is not None
     B = c.shape[0]
@@ -115,7 +115,7 @@ def wavegen(model, length=None, c=None, g=None, initial_value=None,
     Returns:
         numpy.ndarray : Generated waveform samples
     """
-    from train import sanity_check
+    from wavenet_train import sanity_check
     sanity_check(model, c, g)
 
     c = _to_numpy(c)
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     else:
         c = None
 
-    from train import build_model
+    from wavenet_train import build_model
 
     # Model
     model = build_model().to(device)

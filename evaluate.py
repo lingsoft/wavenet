@@ -32,8 +32,8 @@ from torch.nn import functional as F
 from wavenet_vocoder.util import is_mulaw_quantize, is_mulaw, is_raw
 
 import audio
-from hparams import hparams
-from train import RawAudioDataSource, MelSpecDataSource, PyTorchDataset, _pad_2d
+from wavenet_hparams import hparams
+from wavenet_train import RawAudioDataSource, MelSpecDataSource, PyTorchDataset, _pad_2d
 from nnmnkwii.datasets import FileSourceDataset
 
 use_cuda = torch.cuda.is_available()
@@ -130,14 +130,14 @@ if __name__ == "__main__":
     hparams.max_time_sec = None
     hparams.max_time_steps = None
 
-    from train import build_model, get_data_loaders
+    from wavenet_train import build_model, get_data_loaders
     from synthesis import batch_wavegen
 
     # Data
     # Use exactly same testset used in training script
     # disable shuffle for convenience
     # test_data_loader = get_data_loaders(data_root, speaker_id, test_shuffle=False)["test"]
-    from train import collate_fn
+    from wavenet_train import collate_fn
     test_data_loader = get_data_loader(data_root, collate_fn)
     test_dataset = test_data_loader.dataset
 

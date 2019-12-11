@@ -5,7 +5,7 @@ import os
 import audio
 
 from nnmnkwii import preprocessing as P
-from hparams import hparams
+from wavenet_hparams import hparams
 from os.path import exists, basename, splitext
 import librosa
 from glob import glob
