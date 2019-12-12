@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 import os
 import audio
+import torch
 
 from nnmnkwii import preprocessing as P
 from wavenet_hparams import hparams
@@ -13,20 +14,46 @@ from os.path import join
 
 from wavenet_vocoder.util import is_mulaw_quantize, is_mulaw, is_raw
 
+import sys
+sys.path.append('../../tacotron2/')
+from layers import TacotrontSTFT
 
-def build_from_path(in_dir, out_dir, num_workers=1, tqdm=lambda x: x):
+
+class MelSpectrogramCreator():
+
+    tacotron_stft = TacotronSTFT(
+        hparams.fft_size, hparams.hop_size, hparams.win_length,
+        hparams.num_mels, hparams.sample_rate, hparams.fmin,
+        hparams.fmax)
+
+    @classmethod
+    def mel_spectromgram(cls, wav, method):
+        if method == 'original':
+            mel = audio.logmelspectrogram(wav)
+        elif method == 'tacotron':
+            wav_tensor = torch.Tensor(wav).unsqueeze(0)
+            mel_tensor = cls.tacotron_stft.mel_spectrogram(wav_tensor)
+            mel = mel_tensor.squeeze().data.numpy()
+        else:
+            raise ValueError
+        return mel.astype(np.float32).T
+
+
+def build_from_path(in_dir, out_dir, num_workers=1, tqdm=lambda x: x,
+                    mel_method='original'):
     executor = ProcessPoolExecutor(max_workers=num_workers)
     futures = []
     index = 1
     src_files = sorted(glob(join(in_dir, "**/*.wav"), recursive=True))
     for wav_path in src_files:
         futures.append(executor.submit(
-            partial(_process_utterance, out_dir, index, wav_path, "dummy")))
+            partial(_process_utterance, out_dir,
+                    index, wav_path, "dummy", mel_method)))
         index += 1
     return [future.result() for future in tqdm(futures)]
 
 
-def _process_utterance(out_dir, index, wav_path, text):
+def _process_utterance(out_dir, index, wav_path, text, mel_method):
     # Load the audio to a numpy array:
     wav = audio.load_wav(wav_path)
 
@@ -59,7 +86,7 @@ def _process_utterance(out_dir, index, wav_path, text):
 
     # Compute a mel-scale spectrogram from the trimmed wav:
     # (N, D)
-    mel_spectrogram = audio.logmelspectrogram(wav).astype(np.float32).T
+    mel_spectrogram = MelSpectrogramCreator.mel_spectrogram(wav, mel_method)
 
     if hparams.global_gain_scale > 0:
         wav *= hparams.global_gain_scale

@@ -21,7 +21,8 @@ from wavenet_hparams import hparams
 
 def preprocess(mod, in_dir, out_root, num_workers):
     os.makedirs(out_dir, exist_ok=True)
-    metadata = mod.build_from_path(in_dir, out_dir, num_workers, tqdm=tqdm)
+    metadata = mod.build_from_path(in_dir, out_dir, num_workers,
+                                   tqdm=tqdm, mel_method='tacotron')
     write_metadata(metadata, out_dir)
 
 
