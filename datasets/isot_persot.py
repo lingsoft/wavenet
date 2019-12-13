@@ -15,8 +15,8 @@ from os.path import join
 from wavenet_vocoder.util import is_mulaw_quantize, is_mulaw, is_raw
 
 import sys
-sys.path.append('../../tacotron2/')
-from layers import TacotrontSTFT
+sys.path.append('../tacotron2/')
+from layers import TacotronSTFT
 
 
 class MelSpectrogramCreator():
@@ -27,7 +27,7 @@ class MelSpectrogramCreator():
         hparams.fmax)
 
     @classmethod
-    def mel_spectromgram(cls, wav, method):
+    def mel_spectrogram(cls, wav, method):
         if method == 'original':
             mel = audio.logmelspectrogram(wav)
         elif method == 'tacotron':
@@ -84,6 +84,7 @@ def _process_utterance(out_dir, index, wav_path, text, mel_method):
         constant_values = 0.0
         out_dtype = np.float32
 
+    wav = np.clip(wav, -1.0, 1.0)
     # Compute a mel-scale spectrogram from the trimmed wav:
     # (N, D)
     mel_spectrogram = MelSpectrogramCreator.mel_spectrogram(wav, mel_method)
@@ -102,7 +103,6 @@ def _process_utterance(out_dir, index, wav_path, text, mel_method):
         # ignore this sample
         return ("dummy", "dummy", -1, "dummy")
 
-    wav = np.clip(wav, -1.0, 1.0)
 
     # Set waveform target (out)
     if is_mulaw_quantize(hparams.input_type):
