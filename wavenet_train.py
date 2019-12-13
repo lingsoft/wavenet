@@ -622,9 +622,10 @@ def eval_model(global_step, writer, device, model, y, c, g, input_lengths, eval_
     path = join(eval_dir, "step{:09d}_waveplots.png".format(global_step))
     save_waveplot(path, y_hat, y_target)
 
-    #add audio and figures to tensorboard
+    # add audio and figures to tensorboard
     writer.add_audio('target_audio', y_target, global_step, hparams.sample_rate)
     writer.add_audio('generated_audio', y_hat, global_step, hparams.sample_rate)
+
 
 def save_states(global_step, writer, y_hat, y, input_lengths, checkpoint_dir=None):
     print("Save intermediate states at step {}".format(global_step))
@@ -982,7 +983,8 @@ def get_data_loaders(dump_root, speaker_id, test_shuffle=True):
     else:
         max_steps = None
 
-    for phase in ["train_no_dev"]:#, "dev"]:
+    # replaced: for phase in ["train_no_dev", "dev"]:
+    for phase in ["train_no_dev"]:
         train = phase == "train_no_dev"
         X = FileSourceDataset(
             RawAudioDataSource(join(dump_root, phase), speaker_id=speaker_id,
@@ -1083,7 +1085,6 @@ if __name__ == "__main__":
     print("Receptive field (samples / ms): {} / {}".format(
         receptive_field, receptive_field / fs * 1000))
 
-    from torch import optim
     Optimizer = getattr(optim, hparams.optimizer)
     optimizer = Optimizer(model.parameters(), **hparams.optimizer_params)
 
