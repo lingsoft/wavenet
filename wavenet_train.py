@@ -209,7 +209,11 @@ class _NPYDataSource(FileDataSource):
                 self.multi_speaker = False
 
         if self.multi_speaker:
-            speaker_ids_np = list(np.array(self.speaker_ids)[indices])
+            if self.speaker_id is not None:
+                speaker_ids_np = list(np.array(self.speaker_ids)[indices])
+            else:
+                speaker_ids_np = list(np.array(
+                    [id for i, id in enumerate(self.speaker_ids) if idx[i]]))
             self.speaker_ids = list(map(int, speaker_ids_np))
             assert len(paths) == len(self.speaker_ids)
 
@@ -901,6 +905,8 @@ def build_model():
     upsample_params = hparams.upsample_params
     upsample_params["cin_channels"] = hparams.cin_channels
     upsample_params["cin_pad"] = hparams.cin_pad
+    if hparams.gin_channels > 0:
+        use_speaker_embedding = True
     model = WaveNet(
         out_channels=hparams.out_channels,
         layers=hparams.layers,
@@ -917,6 +923,7 @@ def build_model():
         upsample_conditional_features=hparams.upsample_conditional_features,
         upsample_params=upsample_params,
         scalar_input=is_scalar_input(hparams.input_type),
+        use_speaker_embedding=use_speaker_embedding,
         output_distribution=hparams.output_distribution,
     )
     return model

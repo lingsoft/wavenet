@@ -53,6 +53,19 @@ def build_from_path(in_dir, out_dir, num_workers=1, tqdm=lambda x: x,
     return [future.result() for future in tqdm(futures)]
 
 
+def _get_speaker_from_path(path):
+    speaker_str_mapping = {
+            '01m':0,
+            '02m':1,
+            '03m':2,
+            '01n':3,
+            '02n':4,
+            '03n':5,
+    }
+    speaker_str = path.split('_')[1]
+    return speaker_str_mapping[speaker_str]
+
+
 def _process_utterance(out_dir, index, wav_path, text, mel_method):
     # Load the audio to a numpy array:
     wav = audio.load_wav(wav_path)
@@ -136,4 +149,5 @@ def _process_utterance(out_dir, index, wav_path, text, mel_method):
             mel_spectrogram.astype(np.float32), allow_pickle=False)
 
     # Return a tuple describing this training example:
-    return (audio_filename, mel_filename, N, text)
+    speaker_id = _get_speaker_from_path(audio_filename)
+    return (audio_filename, mel_filename, N, text, speaker_id)
