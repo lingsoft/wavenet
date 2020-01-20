@@ -905,8 +905,7 @@ def build_model():
     upsample_params = hparams.upsample_params
     upsample_params["cin_channels"] = hparams.cin_channels
     upsample_params["cin_pad"] = hparams.cin_pad
-    if hparams.gin_channels > 0:
-        use_speaker_embedding = True
+    use_speaker_embedding = True if hparams.gin_channels > 0 else False
     model = WaveNet(
         out_channels=hparams.out_channels,
         layers=hparams.layers,

@@ -239,7 +239,7 @@ class WaveNet(nn.Module):
               or scaler vector B x 1 x T
         """
         self.clear_buffer()
-        B = 1
+        B = c.shape[0] if c is not None else 1
 
         # Note: shape should be **(B x T x C)**, not (B x C x T) opposed to
         # batch forward due to linealized convolution
