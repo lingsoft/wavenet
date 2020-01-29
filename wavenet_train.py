@@ -197,6 +197,7 @@ class _NPYDataSource(FileDataSource):
 
         if self.multi_speaker:
             speaker_ids = list(map(lambda l: int(l.decode("utf-8").split("|")[-1]), lines))
+            speaker_ids = list(np.array(speaker_ids)[idx])
             self.speaker_ids = speaker_ids
             if self.speaker_id is not None:
                 # Filter by speaker_id
