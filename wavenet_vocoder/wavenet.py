@@ -201,7 +201,7 @@ class WaveNet(nn.Module):
         g_bct = _expand_global_features(B, T, g, bct=True)
 
         if c is not None and self.upsample_net is not None:
-            lengths = (c != 0).sum(axis=1)
+            lengths = (c != 0).sum(1)
             c = self.character_embedding(c)
             _, ct, cc = c.size()
             # c = c.view(B * ct, cc)
