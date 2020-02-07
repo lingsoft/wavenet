@@ -7,9 +7,10 @@ def get_mask_from_lengths(lengths, use_cpu):
     max_len = torch.max(lengths).item()
     if use_cpu:
         ids = torch.arange(0, max_len, out=torch.LongTensor(max_len))
+        mask = (ids < lengths.unsqueeze(1)).bool()
     else:
         ids = torch.arange(0, max_len, out=torch.cuda.LongTensor(max_len))
-    mask = (ids < lengths.unsqueeze(1)).bool()
+        mask = (ids < lengths.unsqueeze(1)).byte()
     return mask
 
 
