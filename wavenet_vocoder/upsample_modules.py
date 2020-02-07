@@ -326,7 +326,7 @@ class Decoder(torch.nn.Module):
         # decoder_inputs = self.prenet(decoder_inputs)
 
         self.initialize_decoder_states(
-            memory, mask=~get_mask_from_lengths(memory_lengths, use_cpu=True))
+            memory, mask=~get_mask_from_lengths(memory_lengths, use_cpu=False))
 
         mel_outputs, gate_outputs, alignments = [], [], []
         while len(mel_outputs) < max_audio_length // 256:
