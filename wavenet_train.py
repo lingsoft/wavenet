@@ -12,6 +12,7 @@ options:
     --log-event-path=<name>      Log event path.
     --reset-optimizer            Reset optimizer.
     --speaker-id=<N>             Use specific speaker of data in case for multi-speaker datasets.
+    --text-data-path=<path>      Path of text if text is used as local conditioning
     -h, --help                   Show this help message and exit
 """
 from docopt import docopt
@@ -19,6 +20,7 @@ from docopt import docopt
 import sys
 
 import os
+import re
 from os.path import dirname, join, expanduser, exists
 from tqdm import tqdm
 from datetime import datetime
@@ -102,8 +104,12 @@ def _pad(seq, max_len, constant_values=0):
 
 
 def _pad_2d(x, max_len, b_pad=0, constant_values=0):
-    x = np.pad(x, [(b_pad, max_len - len(x) - b_pad), (0, 0)],
-               mode="constant", constant_values=constant_values)
+    if len(x.shape) == 2:
+        x = np.pad(x, [(b_pad, max_len - len(x) - b_pad), (0, 0)],
+                   mode="constant", constant_values=constant_values)
+    else:
+        x = np.pad(x, [(b_pad, max_len - len(x) - b_pad)],
+                   mode="constant", constant_values=constant_values)
     return x
 
 # from: https://github.com/keras-team/keras/blob/master/keras/utils/np_utils.py
@@ -152,6 +158,46 @@ def to_categorical(y, num_classes=None, dtype='float32'):
     output_shape = input_shape + (num_classes,)
     categorical = np.reshape(categorical, output_shape)
     return categorical
+
+
+class TextDataSet(data_utils.Dataset):
+
+    charachter_list = 'abcdefghijklmnopqrstuvwxyzåäöABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ'
+
+    def __init__(self, text_data_path, speaker=None):
+        with open(text_data_path, 'r') as text_file:
+            if speaker is not None:
+                lines = [l for l in text_file.readlines()
+                         if self.get_speaker_from_path(l.split('|')[0]) == speaker]
+            else:
+                lines = text_file.readlines()
+        mapping = self.create_character_integer_mapping()
+        mapped_lines = [[mapping[c] for c in line.split('|')[1] if c in mapping] for line in lines]
+        self.data = [np.array(l) for l in mapped_lines]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+    @staticmethod
+    def get_speaker_from_path(path):
+        speaker_str_int_mapping = {
+            '01m': 0,
+            '02m': 1,
+            '03m': 2,
+            '01n': 3,
+            '02n': 4,
+            '03n': 5,
+        }
+        speaker_str = re.search(r'0[0-9][m|n]', path).group()
+        return speaker_str_int_mapping[speaker_str]
+
+    @classmethod
+    def create_character_integer_mapping(cls):
+        mapping = {c: i + 1 for i, c in enumerate(cls.charachter_list)}
+        return mapping
 
 
 # TODO: I know this is too ugly...
@@ -284,17 +330,17 @@ class PartialyRandomizedSimilarTimeLengthSampler(Sampler):
 
 
 class PyTorchDataset(object):
-    def __init__(self, X, Mel):
+    def __init__(self, X, local_conditioning):
         self.X = X
-        self.Mel = Mel
+        self.local_conditioning = local_conditioning
         # alias
         self.multi_speaker = X.file_data_source.multi_speaker
 
     def __getitem__(self, idx):
-        if self.Mel is None:
-            mel = None
+        if self.local_conditioning is None:
+            local_conditioning = None
         else:
-            mel = self.Mel[idx]
+            local_conditioning = self.local_conditioning[idx]
 
         raw_audio = self.X[idx]
         if self.multi_speaker:
@@ -303,7 +349,7 @@ class PyTorchDataset(object):
             speaker_id = None
 
         # (x,c,g)
-        return raw_audio, mel, speaker_id
+        return raw_audio, local_conditioning, speaker_id
 
     def __len__(self):
         return len(self.X)
@@ -454,16 +500,16 @@ def collate_fn(batch):
         for idx in range(len(batch)):
             x, c, g = batch[idx]
             if hparams.upsample_conditional_features:
-                assert_ready_for_upsampling(x, c, cin_pad=0)
+                # assert_ready_for_upsampling(x, c, cin_pad=0)
                 if max_time_steps is not None:
                     max_steps = ensure_divisible(max_time_steps, audio.get_hop_size(), True)
                     if len(x) > max_steps:
                         max_time_frames = max_steps // audio.get_hop_size()
-                        s = np.random.randint(cin_pad, len(c) - max_time_frames - cin_pad)
-                        ts = s * audio.get_hop_size()
-                        x = x[ts:ts + audio.get_hop_size() * max_time_frames]
-                        c = c[s - cin_pad:s + max_time_frames + cin_pad, :]
-                        assert_ready_for_upsampling(x, c, cin_pad=cin_pad)
+                        # s = np.random.randint(cin_pad, len(c) - max_time_frames - cin_pad)
+                        # ts = s * audio.get_hop_size()
+                        # x = x[ts:ts + audio.get_hop_size() * max_time_frames]
+                        # c = c[s - cin_pad:s + max_time_frames + cin_pad, :]
+                        # assert_ready_for_upsampling(x, c, cin_pad=cin_pad)
             else:
                 x, c = audio.adjust_time_resolution(x, c)
                 if max_time_steps is not None and len(x) > max_time_steps:
@@ -516,9 +562,10 @@ def collate_fn(batch):
     if local_conditioning:
         max_len = max([len(x[1]) for x in batch])
         c_batch = np.array([_pad_2d(x[1], max_len) for x in batch], dtype=np.float32)
-        assert len(c_batch.shape) == 3
+        assert len(c_batch.shape) == 2
         # (B x C x T)
-        c_batch = torch.FloatTensor(c_batch).transpose(1, 2).contiguous()
+        # c_batch = torch.FloatTensor(c_batch).transpose(1, 2).contiguous()
+        c_batch = torch.LongTensor(c_batch).contiguous()
     else:
         c_batch = None
 
@@ -904,8 +951,9 @@ def build_model():
         warn(s)
 
     upsample_params = hparams.upsample_params
-    upsample_params["cin_channels"] = hparams.cin_channels
-    upsample_params["cin_pad"] = hparams.cin_pad
+    if hparams.text_local_conditioning is False:
+        upsample_params["cin_channels"] = hparams.cin_channels
+        upsample_params["cin_pad"] = hparams.cin_pad
     use_speaker_embedding = True if hparams.gin_channels > 0 else False
     model = WaveNet(
         out_channels=hparams.out_channels,
@@ -921,10 +969,12 @@ def build_model():
         kernel_size=hparams.kernel_size,
         cin_pad=hparams.cin_pad,
         upsample_conditional_features=hparams.upsample_conditional_features,
+        upsample_net=hparams.upsample_net,
         upsample_params=upsample_params,
         scalar_input=is_scalar_input(hparams.input_type),
         use_speaker_embedding=use_speaker_embedding,
         output_distribution=hparams.output_distribution,
+        characters=TextDataSet.charachter_list
     )
     return model
 
@@ -981,7 +1031,7 @@ def restore_parts(path, model):
                 warn("{}: may contain invalid size of weight. skipping...".format(k))
 
 
-def get_data_loaders(dump_root, speaker_id, test_shuffle=True):
+def get_data_loaders(dump_root, speaker_id, text_data_path=None, test_shuffle=True):
     data_loaders = {}
     local_conditioning = hparams.cin_channels > 0
 
@@ -997,7 +1047,10 @@ def get_data_loaders(dump_root, speaker_id, test_shuffle=True):
             RawAudioDataSource(join(dump_root, phase), speaker_id=speaker_id,
                                max_steps=max_steps, cin_pad=hparams.cin_pad,
                                hop_size=audio.get_hop_size()))
-        if local_conditioning:
+        if text_data_path is not None:
+            Mel = TextDataSet(text_data_path)
+
+        elif local_conditioning:
             Mel = FileSourceDataset(
                 MelSpecDataSource(join(dump_root, phase), speaker_id=speaker_id,
                                   max_steps=max_steps, cin_pad=hparams.cin_pad,
@@ -1053,6 +1106,7 @@ if __name__ == "__main__":
     speaker_id = args["--speaker-id"]
     speaker_id = int(speaker_id) if speaker_id is not None else None
     preset = args["--preset"]
+    text_data_path = args["--text-data-path"]
 
     dump_root = args["--dump-root"]
     if dump_root is None:
@@ -1079,7 +1133,7 @@ if __name__ == "__main__":
         json.dump(hparams.values(), f, indent=2)
 
     # Dataloader setup
-    data_loaders = get_data_loaders(dump_root, speaker_id, test_shuffle=True)
+    data_loaders = get_data_loaders(dump_root, speaker_id, text_data_path, test_shuffle=True)
 
     maybe_set_epochs_based_on_max_steps(hparams, len(data_loaders["train_no_dev"]))
 

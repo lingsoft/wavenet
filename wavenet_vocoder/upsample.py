@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
+from wavenet_vocoder.upsample_modules import Decoder, ConvNorm
 
 
 class Stretch2d(nn.Module):
@@ -83,3 +84,42 @@ class ConvInUpsampleNetwork(nn.Module):
     def forward(self, c):
         c_up = self.upsample(self.conv_in(c))
         return c_up
+
+
+class TextUpsampleNetwork(torch.nn.Module):
+    def __init__(self, encoder_embedding_dim, kernel_size, attention_rnn_dim, decoder_rnn_dim,
+                 p_attention_dropout, p_decoder_dropout, local_conditioning_dim,
+                 upsample_scales):
+        super(TextUpsampleNetwork, self).__init__()
+        convolutions = []
+        for _ in range(2):
+            conv_layer = torch.nn.Sequential(
+                ConvNorm(encoder_embedding_dim, encoder_embedding_dim,
+                         kernel_size=kernel_size,
+                         padding=int((kernel_size - 1) / 2),
+                         dilation=1,
+                         w_init_gain='relu'),
+                torch.nn.BatchNorm1d(encoder_embedding_dim))
+            convolutions.append(conv_layer)
+        self.convolutions = torch.nn.ModuleList(convolutions)
+
+        self.lstm = torch.nn.LSTM(encoder_embedding_dim,
+                                  int(encoder_embedding_dim / 2), 1,
+                                  batch_first=True, bidirectional=True)
+
+        self.decoder = Decoder(encoder_embedding_dim, attention_rnn_dim, decoder_rnn_dim,
+                               p_attention_dropout, p_decoder_dropout, local_conditioning_dim)
+
+        self.postnet = UpsampleNetwork(upsample_scales, cin_channels=local_conditioning_dim)
+
+    def forward(self, x, lengths, max_audio_length):
+        x = x.transpose(1, 2)
+        for conv in self.convolutions:
+            x = conv(x)
+
+        x = x.transpose(1, 2)
+        x, _ = self.lstm(x)
+        local_conditioning, gate_outputs, alignments = self.decoder(x, lengths, max_audio_length)
+        c = self.postnet(local_conditioning)
+
+        return c, gate_outputs, alignments

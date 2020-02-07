@@ -65,15 +65,27 @@ hparams = HParams(
     kernel_size=3,
 
     # Local conditioning (set negative value to disable))
-    cin_channels=80,
+    cin_channels=64,
     cin_pad=2,
     # If True, use transposed convolutions to upsample conditional features,
     # otherwise repeat features to adjust time resolution
     upsample_conditional_features=True,
-    upsample_net="ConvInUpsampleNetwork",
+    # upsample_net="ConvInUpsampleNetwork",
+    upsample_net="TextUpsampleNetwork",
+    # upsample_params={
+    #    "upsample_scales": [4, 4, 4, 4],  # should np.prod(upsample_scales) == hop_size
+    # },
     upsample_params={
-        "upsample_scales": [4, 4, 4, 4],  # should np.prod(upsample_scales) == hop_size
+        "encoder_embedding_dim": 128,
+        "kernel_size": 5,
+        "attention_rnn_dim": 128,
+        "decoder_rnn_dim": 128,
+        "p_attention_dropout": 0.1,
+        "p_decoder_dropout": 0.1,
+        "local_conditioning_dim": 64,
+        "upsample_scales": [4, 4, 4, 4],
     },
+    text_local_conditioning=True,
 
     # Global conditioning (set negative value to disable)
     # currently limited for speaker embedding
@@ -83,12 +95,12 @@ hparams = HParams(
 
     # Data loader
     pin_memory=True,
-    num_workers=2,
+    num_workers=0,
 
     # Loss
 
     # Training:
-    batch_size=8,
+    batch_size=4,
     optimizer="Adam",
     optimizer_params={
         "lr": 1e-3,
@@ -111,7 +123,7 @@ hparams = HParams(
     max_time_steps=10240,  # 256 * 40
 
     # Hold moving averaged parameters and use them for evaluation
-    exponential_moving_average=True,
+    exponential_moving_average=False,
     # averaged = decay * averaged + (1 - decay) * x
     ema_decay=0.9999,
 

@@ -108,6 +108,8 @@ class WaveNet(nn.Module):
                  use_speaker_embedding=False,
                  output_distribution="Logistic",
                  cin_pad=0,
+                 character_embedding_dim=128,
+                 characters='',
                  ):
         super(WaveNet, self).__init__()
         self.scalar_input = scalar_input
@@ -139,6 +141,12 @@ class WaveNet(nn.Module):
             nn.ReLU(inplace=True),
             Conv1d1x1(skip_out_channels, out_channels),
         ])
+
+        self.character_embedding = nn.Embedding(
+            len(characters), character_embedding_dim)
+
+        self.embedding_transformation_layer = nn.Linear(
+            character_embedding_dim, cin_channels)
 
         if gin_channels > 0 and use_speaker_embedding:
             assert n_speakers is not None
@@ -193,7 +201,13 @@ class WaveNet(nn.Module):
         g_bct = _expand_global_features(B, T, g, bct=True)
 
         if c is not None and self.upsample_net is not None:
-            c = self.upsample_net(c)
+            lengths = (c != 0).sum(axis=1)
+            c = self.character_embedding(c)
+            _, ct, cc = c.size()
+            # c = c.view(B * ct, cc)
+            # c = torch.tanh(self.embedding_transformation_layer(c))
+            # c = c.view(B, -1, ct)
+            c, gate_outputs, alignments = self.upsample_net(c, lengths, T)
             assert c.size(-1) == x.size(-1)
 
         # Feed data to network
