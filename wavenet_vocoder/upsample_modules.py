@@ -140,7 +140,7 @@ class Attention(torch.nn.Module):
         return attention_context, attention_weights
 
 
-encoder_embedding_dim = 512
+'''encoder_embedding_dim = 512
 attention_rnn_dim = 256
 attention_dim = 32
 attention_location_n_filters = 32
@@ -150,11 +150,12 @@ local_conditioning_dim = 64
 frames_per_step = 1
 prenet_dim = 256
 p_attention_dropout = 0.1
-p_decoder_dropout = 0.1
+p_decoder_dropout = 0.1'''
 
 
 class Decoder(torch.nn.Module):
     def __init__(self, encoder_embedding_dim, attention_rnn_dim, decoder_rnn_dim,
+                 attention_dim, attention_location_n_filters, attention_location_kernel_size,
                  p_attention_dropout, p_decoder_dropout, local_conditioning_dim):
         super().__init__()
         self.encoder_embedding_dim = encoder_embedding_dim
@@ -165,10 +166,6 @@ class Decoder(torch.nn.Module):
         self.local_conditioning_dim = local_conditioning_dim
 
         self.frames_per_step = 1
-
-        self.prenet = Prenet(
-            local_conditioning_dim * frames_per_step,
-            [prenet_dim, prenet_dim])
 
         self.attention_rnn = torch.nn.LSTMCell(encoder_embedding_dim + local_conditioning_dim,
                                                attention_rnn_dim)
@@ -183,7 +180,7 @@ class Decoder(torch.nn.Module):
 
         self.linear_projection = LinearNorm(
             decoder_rnn_dim + encoder_embedding_dim,
-            local_conditioning_dim * frames_per_step)
+            local_conditioning_dim * self.frames_per_step)
 
         self.gate_layer = LinearNorm(
             decoder_rnn_dim + encoder_embedding_dim, 1,
@@ -322,6 +319,8 @@ class Decoder(torch.nn.Module):
         alignments: sequence of attention weights from the decoder
         """
         decoder_input = self.get_go_frame(memory).squeeze()
+        if len(decoder_input.shape) == 1:
+            decoder_input = decoder_input.unsqueeze(0)
         # decoder_inputs = self.parse_decoder_inputs(decoder_inputs)
         # decoder_inputs = torch.cat((decoder_input, decoder_inputs), dim=0)
         # decoder_inputs = self.prenet(decoder_inputs)

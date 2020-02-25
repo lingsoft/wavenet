@@ -58,14 +58,14 @@ hparams = HParams(
     out_channels=10 * 3,
     layers=24,
     stacks=4,
-    residual_channels=128,
+    residual_channels=64,
     gate_channels=256,  # split into 2 gropus internally for gated activation
     skip_out_channels=128,
     dropout=0.0,
     kernel_size=3,
 
     # Local conditioning (set negative value to disable))
-    cin_channels=64,
+    cin_channels=32,
     cin_pad=2,
     # If True, use transposed convolutions to upsample conditional features,
     # otherwise repeat features to adjust time resolution
@@ -76,16 +76,20 @@ hparams = HParams(
     #    "upsample_scales": [4, 4, 4, 4],  # should np.prod(upsample_scales) == hop_size
     # },
     upsample_params={
-        "encoder_embedding_dim": 128,
+        "encoder_embedding_dim": 32,
         "kernel_size": 5,
-        "attention_rnn_dim": 128,
-        "decoder_rnn_dim": 128,
+        "attention_rnn_dim": 32,
+        "decoder_rnn_dim": 32,
         "p_attention_dropout": 0.1,
         "p_decoder_dropout": 0.1,
-        "local_conditioning_dim": 64,
+        "local_conditioning_dim": 32,
         "upsample_scales": [4, 4, 4, 4],
+        "attention_dim": 16,
+        "attention_location_n_filters": 32,
+        "attention_location_kernel_size": 31,
     },
     text_local_conditioning=True,
+    character_embedding_dim=32,
 
     # Global conditioning (set negative value to disable)
     # currently limited for speaker embedding
@@ -100,7 +104,7 @@ hparams = HParams(
     # Loss
 
     # Training:
-    batch_size=4,
+    batch_size=1,
     optimizer="Adam",
     optimizer_params={
         "lr": 1e-3,

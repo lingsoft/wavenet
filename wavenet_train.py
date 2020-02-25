@@ -974,6 +974,7 @@ def build_model():
         scalar_input=is_scalar_input(hparams.input_type),
         use_speaker_embedding=use_speaker_embedding,
         output_distribution=hparams.output_distribution,
+        character_embedding_dim=hparams.character_embedding_dim,
         characters=TextDataSet.charachter_list
     )
     return model

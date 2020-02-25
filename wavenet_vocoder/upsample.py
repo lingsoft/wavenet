@@ -88,8 +88,9 @@ class ConvInUpsampleNetwork(nn.Module):
 
 class TextUpsampleNetwork(torch.nn.Module):
     def __init__(self, encoder_embedding_dim, kernel_size, attention_rnn_dim, decoder_rnn_dim,
-                 p_attention_dropout, p_decoder_dropout, local_conditioning_dim,
-                 upsample_scales):
+                 attention_dim, attention_location_n_filters, attention_location_kernel_size,
+                 p_attention_dropout, p_decoder_dropout,
+                 local_conditioning_dim, upsample_scales):
         super(TextUpsampleNetwork, self).__init__()
         convolutions = []
         for _ in range(2):
@@ -108,7 +109,9 @@ class TextUpsampleNetwork(torch.nn.Module):
                                   batch_first=True, bidirectional=True)
 
         self.decoder = Decoder(encoder_embedding_dim, attention_rnn_dim, decoder_rnn_dim,
-                               p_attention_dropout, p_decoder_dropout, local_conditioning_dim)
+                               attention_dim, attention_location_n_filters,
+                               attention_location_kernel_size, p_attention_dropout,
+                               p_decoder_dropout, local_conditioning_dim)
 
         self.postnet = UpsampleNetwork(upsample_scales, cin_channels=local_conditioning_dim)
 
