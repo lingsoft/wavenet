@@ -55,12 +55,12 @@ def build_from_path(in_dir, out_dir, num_workers=1, tqdm=lambda x: x,
 
 def _get_speaker_from_path(path):
     speaker_str_mapping = {
-            '01m':0,
-            '02m':1,
-            '03m':2,
-            '01n':3,
-            '02n':4,
-            '03n':5,
+        '01m': 0,
+        '02m': 1,
+        '03m': 2,
+        '01n': 3,
+        '02n': 4,
+        '03n': 5,
     }
     speaker_str = path.split('_')[1]
     return speaker_str_mapping[speaker_str]
@@ -115,7 +115,6 @@ def _process_utterance(out_dir, index, wav_path, text, mel_method):
         print("""Warning: abs max value exceeds 1.0: {}""".format(np.abs(wav).max()))
         # ignore this sample
         return ("dummy", "dummy", -1, "dummy")
-
 
     # Set waveform target (out)
     if is_mulaw_quantize(hparams.input_type):
