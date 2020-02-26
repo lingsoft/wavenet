@@ -12,6 +12,7 @@ options:
     --log-event-path=<name>      Log event path.
     --reset-optimizer            Reset optimizer.
     --speaker-id=<N>             Use specific speaker of data in case for multi-speaker datasets.
+    --regex-filter=<str>         A regex string used to filter training data.
     -h, --help                   Show this help message and exit
 """
 from docopt import docopt
@@ -25,6 +26,7 @@ from datetime import datetime
 import random
 import json
 from glob import glob
+import re
 
 import numpy as np
 
@@ -157,7 +159,7 @@ def to_categorical(y, num_classes=None, dtype='float32'):
 # TODO: I know this is too ugly...
 class _NPYDataSource(FileDataSource):
     def __init__(self, dump_root, col, typ="", speaker_id=None, max_steps=8000,
-                 cin_pad=0, hop_size=256):
+                 cin_pad=0, hop_size=256, regex_filter=None):
         self.dump_root = dump_root
         self.col = col
         self.lengths = []
@@ -177,9 +179,11 @@ class _NPYDataSource(FileDataSource):
 
         with open(meta, "rb") as f:
             lines = f.readlines()
+        if regex_filter is not None:
+            lines = [l for l in lines if re.search(regex_filter, l.decode('utf-8'))]
         l = lines[0].decode("utf-8").split("|")
         assert len(l) == 4 or len(l) == 5
-        self.multi_speaker = len(l) == 5
+        # self.multi_speaker = len(l) == 5
         self.lengths = list(
             map(lambda l: int(l.decode("utf-8").split("|")[2]), lines))
 
@@ -980,7 +984,7 @@ def restore_parts(path, model):
                 warn("{}: may contain invalid size of weight. skipping...".format(k))
 
 
-def get_data_loaders(dump_root, speaker_id, test_shuffle=True):
+def get_data_loaders(dump_root, speaker_id, test_shuffle=True, regex_filter=None):
     data_loaders = {}
     local_conditioning = hparams.cin_channels > 0
 
@@ -990,17 +994,17 @@ def get_data_loaders(dump_root, speaker_id, test_shuffle=True):
         max_steps = None
 
     # replaced: for phase in ["train_no_dev", "dev"]:
-    for phase in ["train_no_dev"]:
+    for phase in ["train_no_dev", "dev"]:
         train = phase == "train_no_dev"
         X = FileSourceDataset(
             RawAudioDataSource(join(dump_root, phase), speaker_id=speaker_id,
                                max_steps=max_steps, cin_pad=hparams.cin_pad,
-                               hop_size=audio.get_hop_size()))
+                               hop_size=audio.get_hop_size(), regex_filter=regex_filter))
         if local_conditioning:
             Mel = FileSourceDataset(
                 MelSpecDataSource(join(dump_root, phase), speaker_id=speaker_id,
                                   max_steps=max_steps, cin_pad=hparams.cin_pad,
-                                  hop_size=audio.get_hop_size()))
+                                  hop_size=audio.get_hop_size(), regex_filter=regex_filter))
             assert len(X) == len(Mel)
             print("Local conditioning enabled. Shape of a sample: {}.".format(
                 Mel[0].shape))
@@ -1052,6 +1056,7 @@ if __name__ == "__main__":
     speaker_id = args["--speaker-id"]
     speaker_id = int(speaker_id) if speaker_id is not None else None
     preset = args["--preset"]
+    regex_filter = args["--regex-filter"]
 
     dump_root = args["--dump-root"]
     if dump_root is None:
@@ -1078,7 +1083,7 @@ if __name__ == "__main__":
         json.dump(hparams.values(), f, indent=2)
 
     # Dataloader setup
-    data_loaders = get_data_loaders(dump_root, speaker_id, test_shuffle=True)
+    data_loaders = get_data_loaders(dump_root, speaker_id, test_shuffle=True, regex_filter=regex_filter)
 
     maybe_set_epochs_based_on_max_steps(hparams, len(data_loaders["train_no_dev"]))
 

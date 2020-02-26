@@ -63,7 +63,7 @@ def _get_speaker_from_path(path):
         '03n': 5,
     }
     speaker_str = path.split('_')[1]
-    return speaker_str_mapping[speaker_str]
+    return speaker_str_mapping.get(speaker_str)
 
 
 def _process_utterance(out_dir, index, wav_path, text, mel_method):
