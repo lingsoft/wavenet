@@ -83,3 +83,17 @@ class ConvInUpsampleNetwork(nn.Module):
     def forward(self, c):
         c_up = self.upsample(self.conv_in(c))
         return c_up
+
+
+class SimpleUpsampleNetwork(nn.Module):
+    def __init__(self, mel_channels, out_channels, hop_size):
+        super(SimpleUpsampleNetwork, self).__init__()
+
+        self.conv_layer = Conv1d1x1(mel_channels, out_channels,
+                                    weight_normalization=True)
+        self.upsample_layer = nn.Upsample(mode='linear', scale_factor=hop_size)
+
+    def forward(self, c):
+        x = self.conv_layer(c)
+        x = self.upsample_layer(x)
+        return x
