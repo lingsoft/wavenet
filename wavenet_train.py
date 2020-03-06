@@ -924,6 +924,7 @@ def build_model():
         kernel_size=hparams.kernel_size,
         cin_pad=hparams.cin_pad,
         upsample_conditional_features=hparams.upsample_conditional_features,
+        upsample_net=hparams.upsample_net,
         upsample_params=upsample_params,
         scalar_input=is_scalar_input(hparams.input_type),
         use_speaker_embedding=use_speaker_embedding,
@@ -994,7 +995,7 @@ def get_data_loaders(dump_root, speaker_id, test_shuffle=True, regex_filter=None
         max_steps = None
 
     # replaced: for phase in ["train_no_dev", "dev"]:
-    for phase in ["train_no_dev", "dev"]:
+    for phase in ["train_no_dev"]:
         train = phase == "train_no_dev"
         X = FileSourceDataset(
             RawAudioDataSource(join(dump_root, phase), speaker_id=speaker_id,

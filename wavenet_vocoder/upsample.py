@@ -4,6 +4,7 @@ from __future__ import with_statement, print_function, absolute_import
 import math
 import numpy as np
 
+from .modules import Conv1d1x1
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -86,11 +87,10 @@ class ConvInUpsampleNetwork(nn.Module):
 
 
 class SimpleUpsampleNetwork(nn.Module):
-    def __init__(self, mel_channels, out_channels, hop_size):
+    def __init__(self, mel_channels, cin_channels, hop_size, cin_pad):
         super(SimpleUpsampleNetwork, self).__init__()
 
-        self.conv_layer = Conv1d1x1(mel_channels, out_channels,
-                                    weight_normalization=True)
+        self.conv_layer = Conv1d1x1(mel_channels, cin_channels)
         self.upsample_layer = nn.Upsample(mode='linear', scale_factor=hop_size)
 
     def forward(self, c):

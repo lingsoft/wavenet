@@ -29,6 +29,16 @@ hparams = HParams(
     # waveform domain scaling
     global_gain_scale=1.0,
 
+    # >>>>>>????>>>>>>
+    min_level_db=-100,
+    ref_level_db=20,
+    rescaling=True,
+    rescaling_max=0.999,
+    allow_clipping_in_normalization=True,
+    weight_normalization=True,
+    freq_axis_kernel_size=3,
+    # <<<<<<????<<<<<<
+
     sample_rate=22050,
     # this is only valid for mulaw is True
     silence_threshold=2,
