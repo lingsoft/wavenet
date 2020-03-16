@@ -59,6 +59,7 @@ from wavenet_vocoder.mixture import discretized_mix_logistic_loss
 from wavenet_vocoder.mixture import sample_from_discretized_mix_logistic
 from wavenet_vocoder.mixture import mix_gaussian_loss
 from wavenet_vocoder.mixture import sample_from_mix_gaussian
+from wavenet_vocoder.tfcompat.hparam import HParams
 
 import audio
 from wavenet_hparams import hparams, hparams_debug_string
@@ -896,7 +897,10 @@ def save_checkpoint(device, model, optimizer, step, checkpoint_dir, epoch, ema=N
         shutil.copyfile(checkpoint_path, latest_pth)
 
 
-def build_model():
+def build_model(hparams_json=None):
+    if hparams_json is not None:
+        with open(hparams_json, 'r') as jf:
+            hparams = HParams(**json.load(jf))
     if is_mulaw_quantize(hparams.input_type):
         if hparams.out_channels != hparams.quantize_channels:
             raise RuntimeError(
