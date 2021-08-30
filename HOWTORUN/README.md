@@ -2,23 +2,11 @@
 First clone the project and copy audio directory into wavenet_vocoder directory.
 
 ## Install dependencies:
-Assume conda 4.10.3 is installed with python 3.9.6
-### Create, activate new conda environment
+The project was tested with python 3.7.11 
+### Install packages
 ````
-conda create --name wavenet-conda && conda activate wavenet-conda
-````
-### Install dependencies for this conda
-````
-conda install docopt
-conda install matplotlib
-conda install nbconvert
-conda install -c conda-forge librosa
-conda install pytorch torchaudio -c pytorch
-pip install nnmnkwii
-````
-### Or directly create a new conda environment with necessary packages
-````
-conda env create -f env.yml
+python -m venv venv && source venv/bin/activate
+pip install -r req.txt
 ````
 
 ## Spliting the data into train, dev, eval
