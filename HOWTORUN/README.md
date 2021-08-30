@@ -19,7 +19,7 @@ pip install -r requirements.txt
 ````
 ## Start training the model with default configuration under gaussian recipe (json)[egs/gaussian/conf/gaussian_wavenet.json]
 ````
- sh CUDA_VISIBLE_DEVICES="0,1" ./egs/gaussian/run.sh --stage 2 --stop-stage 2
+ sh ./egs/gaussian/run.sh --stage 2 --stop-stage 2
 ````
 ## Synthesize audio files using the trained model given mel spectrogram from dump/norm/eval/*.npy input files.
 ````
