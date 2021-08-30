@@ -6,7 +6,7 @@ The project was tested with python 3.7.11
 ### Install packages
 ````
 python -m venv venv && source venv/bin/activate
-pip install -r req.txt
+pip install -r requirements.txt
 ````
 
 ## Spliting the data into train, dev, eval
