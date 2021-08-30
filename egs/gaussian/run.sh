@@ -5,8 +5,8 @@ VOC_DIR=$script_dir/../../
 
 # Directory that contains all wav files
 # **CHANGE** this to your database path
-db_root=~/data/LJSpeech-1.1/wavs/
-
+#db_root=~/data/LJSpeech-1.1/wavs/
+db_root=~/LINGSOFT/wavenet_vocoder/data/audio
 spk="lj"
 dumpdir=dump
 
@@ -25,7 +25,7 @@ stop_stage=0
 
 # Hyper parameters (.json)
 # **CHANGE** here to your own hparams
-hparams=conf/gaussian_wavenet_demo.json
+hparams=egs/gaussian/conf/gaussian_wavenet_demo.json
 
 # Batch size at inference time.
 inference_batch_size=32
